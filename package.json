@@ -17,6 +17,25 @@
       {
         "command": "loadforge.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "loadforge.runLoadTest",
+        "title": "Run Load Test"
+      },
+      {
+        "command": "loadforge.markAsEnvFile",
+        "title": "Mark as Environment File"
+      }
+    ],
+    "languages": [
+      {
+        "id": "lf-dsl",
+        "extensions": [".lf"],
+        "aliases": ["LoadForge DSL", "lf-dsl"],
+        "icon": {
+          "light": "icons/beaker-light.svg",
+          "dark": "icons/beaker-dark.svg"
+        }
       }
     ]
   },
