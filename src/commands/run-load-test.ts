@@ -3,10 +3,18 @@ import * as vscode from 'vscode';
 let terminal: vscode.Terminal | null = null;
 
 function getBinaryPath(): string {
-    // TODO: Extend with linux and macOS support
-    const binaryName = 'loadforge.exe';
-    const binaryPath = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '\\bin\\' + binaryName;
-    return binaryPath;
+    const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
+    const binaryPathLinux = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '/bin/' + binaryName;
+    const binaryPathWindows = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '\\bin\\' + binaryName;
+    return process.platform === 'win32' ? binaryPathWindows : binaryPathLinux;
+}
+
+function generateCommand(binaryPath: string, args: string[]) {
+    if (process.platform === 'win32') {
+        const cmd = `& "${binaryPath}" ${args.map(a => `"${a}"`).join(" ")}`;
+        return cmd;
+    }
+    return `${binaryPath} ${args.map(a => `"${a}"`).join(" ")}`;
 }
 
 async function collectEnvironmentFilePaths(): Promise<string[]> {
@@ -59,7 +67,7 @@ function invokeBinaryExecution(binaryPath: string, args: string[]) {
     // find terminal with name "LoadForge" or create a new one with debug icon
     terminal = vscode.window.terminals.find(t => t.name === 'LoadForge') || vscode.window.createTerminal({ name: 'LoadForge', iconPath: new vscode.ThemeIcon('beaker') });
     terminal.show();
-    const cmd = `& "${binaryPath}" ${args.map(a => `"${a}"`).join(" ")}`;
+    const cmd = generateCommand(binaryPath, args);
     terminal.sendText(cmd);
 }
 
