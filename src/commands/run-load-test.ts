@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { updateIsRunningState } from './running-context';
 
 let terminal: vscode.Terminal | null = null;
 
@@ -69,6 +70,7 @@ function invokeBinaryExecution(binaryPath: string, args: string[]) {
     terminal.show();
     const cmd = generateCommand(binaryPath, args);
     terminal.sendText(cmd);
+    updateIsRunningState(true);
 }
 
 export async function runLoadTest(lfFilePath: string) {
@@ -79,4 +81,5 @@ export async function runLoadTest(lfFilePath: string) {
 
 export function stopLoadTest() {
     terminal?.sendText('\x03'); // Send Ctrl+C to stop the process
+    updateIsRunningState(false);
 }

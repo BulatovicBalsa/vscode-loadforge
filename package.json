@@ -18,6 +18,11 @@
         "command": "loadforge.runLoadTest",
         "title": "Run Load Test",
         "icon": "$(play)"
+      },
+      {
+        "command": "loadforge.stopLoadTest",
+        "title": "Stop Load Test",
+        "icon": "$(stop)"
       }
     ],
     "languages": [
