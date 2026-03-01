@@ -25,10 +25,18 @@
         "id": "lf-dsl",
         "extensions": [".lf"],
         "aliases": ["LoadForge DSL", "lf-dsl"],
+        "configuration": "./language-configuration.json",
         "icon": {
           "light": "icons/beaker-light.svg",
           "dark": "icons/beaker-dark.svg"
         }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lf-dsl",
+        "scopeName": "source.lf-dsl",
+        "path": "./syntaxes/lf-dsl.tmLanguage.json"
       }
     ],
     "keybindings": [

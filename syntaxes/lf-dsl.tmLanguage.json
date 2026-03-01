@@ -1,0 +1,152 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "LoadForge DSL",
+  "scopeName": "source.lf-dsl",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#interpolation" },
+    { "include": "#numbersAndDurations" },
+    { "include": "#urlsAndJsonPath" },
+    { "include": "#httpMethods" },
+    { "include": "#keywords" },
+    { "include": "#blocks" },
+    { "include": "#identifiersAndRefs" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.lf",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.line.number-sign.lf",
+          "match": "#(?!\\{?\\w).*$"
+        },
+        {
+          "name": "comment.block.lf",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.lf",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "include": "#interpolation" },
+            { "name": "constant.character.escape.lf", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+
+    "interpolation": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.interpolation.begin.lf",
+          "match": "\\$\\{"
+        },
+        {
+          "name": "punctuation.definition.interpolation.end.lf",
+          "match": "\\}"
+        },
+        {
+          "name": "variable.other.interpolated.lf",
+          "match": "(?<=\\$\\{)\\s*[A-Za-z_][A-Za-z0-9_]*\\s*(?=\\})"
+        }
+      ]
+    },
+
+    "numbersAndDurations": {
+      "patterns": [
+        {
+          "name": "constant.numeric.lf",
+          "match": "\\b\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.duration.lf",
+          "match": "\\b\\d+(ms|s|m|h)\\b"
+        }
+      ]
+    },
+
+    "urlsAndJsonPath": {
+      "patterns": [
+        {
+          "name": "string.other.jsonpath.lf",
+          "match": "\\$(?:\\.[A-Za-z_][A-Za-z0-9_]*|\\[[0-9]+\\])+"
+        },
+        {
+          "name": "string.other.url.lf",
+          "match": "\"/(?:[^\"\\\\]|\\\\.)*\""
+        }
+      ]
+    },
+
+    "httpMethods": {
+      "patterns": [
+        {
+          "name": "constant.language.http-method.lf",
+          "match": "\\b(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\\b"
+        }
+      ]
+    },
+
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.lf",
+          "match": "\\b(test|environment|target|auth|login|endpoint|method|body|format|variables|scenario|request|expect|status|json|equals|isArray|load|users|rampUp|duration)\\b"
+        },
+        {
+          "name": "support.function.lf",
+          "match": "\\benv\\b(?=\\s*\\()"
+        },
+        {
+          "name": "keyword.operator.assignment.lf",
+          "match": "="
+        }
+      ]
+    },
+
+    "blocks": {
+      "patterns": [
+        {
+          "name": "punctuation.section.block.begin.lf",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.block.end.lf",
+          "match": "\\}"
+        }
+      ]
+    },
+
+    "identifiersAndRefs": {
+      "patterns": [
+        {
+          "name": "entity.name.section.lf",
+          "match": "\\b(test|scenario|auth|login)\\b(?=\\s+\"[^\"]+\")"
+        },
+        {
+          "name": "entity.name.section.title.lf",
+          "match": "(?<=(?:test|scenario|auth|login)\\s+)\"[^\"]+\""
+        },
+        {
+          "name": "variable.other.lf",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b(?=\\s*=)"
+        },
+        {
+          "name": "variable.other.reference.lf",
+          "match": "#[A-Za-z_][A-Za-z0-9_]*\\b"
+        }
+      ]
+    }
+  }
+}
