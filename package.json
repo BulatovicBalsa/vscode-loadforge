@@ -66,6 +66,13 @@
           "when": "editorLangId == 'lf-dsl'",
           "group": "navigation"
         }
+      ],
+      "editor/context": [
+        {
+          "command": "loadforge.runLoadTest",
+          "when": "editorLangId == 'lf-dsl'",
+          "group": "navigation"
+        }
       ]
     }
   },
