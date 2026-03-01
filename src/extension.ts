@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import { runLoadTest } from './commands/run-load-test';
+import { runLoadTest, stopLoadTest } from './commands/run-load-test';
 
 export function activate(context: vscode.ExtensionContext) {
-
-	console.log('Congratulations, your extension "loadforge" is now active!');
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('loadforge.runLoadTest', async (explorerUri?: vscode.Uri) => {
@@ -19,6 +17,13 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	));
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('loadforge.stopLoadTest', () => {
+			stopLoadTest();
+		})
+	);
+
 }
 
 export function deactivate() {

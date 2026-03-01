@@ -48,34 +48,58 @@
       {
         "command": "loadforge.runLoadTest",
         "key": "F5",
-        "when": "editorLangId == 'lf-dsl'"
+        "when": "editorLangId == 'lf-dsl' && !loadforge.isRunning"
+      },
+      {
+        "command": "loadforge.stopLoadTest",
+        "key": "F5",
+        "when": "editorLangId == 'lf-dsl' && loadforge.isRunning"
       }
     ],
     "menus": {
       "commandPalette": [
         {
           "command": "loadforge.runLoadTest",
-          "when": "editorLangId == 'lf-dsl'"
+          "when": "editorLangId == 'lf-dsl' && !loadforge.isRunning"
+        },
+        {
+          "command": "loadforge.stopLoadTest",
+          "when": "editorLangId == 'lf-dsl' && loadforge.isRunning"
         }
       ],
       "explorer/context": [
         {
           "command": "loadforge.runLoadTest",
-          "when": "resourceLangId == 'lf-dsl'",
+          "when": "resourceLangId == 'lf-dsl' && !loadforge.isRunning",
+          "group": "navigation"
+        },
+        {
+          "command": "loadforge.stopLoadTest",
+          "when": "resourceLangId == 'lf-dsl' && loadforge.isRunning",
           "group": "navigation"
         }
       ],
       "editor/title": [
         {
           "command": "loadforge.runLoadTest",
-          "when": "editorLangId == 'lf-dsl'",
+          "when": "editorLangId == 'lf-dsl' && !loadforge.isRunning",
+          "group": "navigation"
+        },
+        {
+          "command": "loadforge.stopLoadTest",
+          "when": "editorLangId == 'lf-dsl' && loadforge.isRunning",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
           "command": "loadforge.runLoadTest",
-          "when": "editorLangId == 'lf-dsl'",
+          "when": "editorLangId == 'lf-dsl' && !loadforge.isRunning",
+          "group": "navigation"
+        },
+        {
+          "command": "loadforge.stopLoadTest",
+          "when": "editorLangId == 'lf-dsl' && loadforge.isRunning",
           "group": "navigation"
         }
       ]

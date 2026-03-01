@@ -1,7 +1,15 @@
 import * as vscode from 'vscode';
 import { updateIsRunningState } from './running-context';
 
-let terminal: vscode.Terminal | null = null;
+let currentExecution: vscode.TaskExecution | undefined;
+
+vscode.tasks.onDidEndTaskProcess(e => {
+    if (currentExecution && e.execution === currentExecution) {
+        console.log('Exit code:', e.exitCode);
+        updateIsRunningState(false);
+        currentExecution = undefined;
+    }
+});
 
 function getBinaryPath(): string {
     const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
@@ -64,13 +72,18 @@ function _runLoadTest(lfFilePath: string, envFilePath: string | undefined) {
     invokeBinaryExecution(binaryPath, args);
 }
 
-function invokeBinaryExecution(binaryPath: string, args: string[]) {
-    // find terminal with name "LoadForge" or create a new one with debug icon
-    terminal = vscode.window.terminals.find(t => t.name === 'LoadForge') || vscode.window.createTerminal({ name: 'LoadForge', iconPath: new vscode.ThemeIcon('beaker') });
-    terminal.show();
-    const cmd = generateCommand(binaryPath, args);
-    terminal.sendText(cmd);
+async function invokeBinaryExecution(binaryPath: string, args: string[]) {
     updateIsRunningState(true);
+
+    const task = new vscode.Task(
+        { type: 'shell' },
+        vscode.TaskScope.Workspace,
+        'Run Load Test',
+        'loadforge',
+        new vscode.ShellExecution(generateCommand(binaryPath, args)),
+    );
+
+    currentExecution = await vscode.tasks.executeTask(task);
 }
 
 export async function runLoadTest(lfFilePath: string) {
@@ -80,6 +93,5 @@ export async function runLoadTest(lfFilePath: string) {
 }
 
 export function stopLoadTest() {
-    terminal?.sendText('\x03'); // Send Ctrl+C to stop the process
-    updateIsRunningState(false);
+    currentExecution?.terminate();
 }
