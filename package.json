@@ -15,16 +15,9 @@
   "contributes": {
     "commands": [
       {
-        "command": "loadforge.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "loadforge.runLoadTest",
-        "title": "Run Load Test"
-      },
-      {
-        "command": "loadforge.markAsEnvFile",
-        "title": "Mark as Environment File"
+        "title": "Run Load Test",
+        "icon": "$(play)"
       }
     ],
     "languages": [
@@ -37,7 +30,36 @@
           "dark": "icons/beaker-dark.svg"
         }
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "loadforge.runLoadTest",
+        "key": "F5",
+        "when": "editorLangId == 'lf-dsl'"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "loadforge.runLoadTest",
+          "when": "editorLangId == 'lf-dsl'"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "loadforge.runLoadTest",
+          "when": "resourceLangId == 'lf-dsl'",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "loadforge.runLoadTest",
+          "when": "editorLangId == 'lf-dsl'",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
