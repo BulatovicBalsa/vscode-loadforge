@@ -58,7 +58,7 @@
       {
         "command": "loadforge.stopLoadTest",
         "key": "F5",
-        "when": "editorLangId == 'lf-dsl' && loadforge.isRunning"
+        "when": "loadforge.isRunning"
       }
     ],
     "menus": {
@@ -69,7 +69,7 @@
         },
         {
           "command": "loadforge.stopLoadTest",
-          "when": "editorLangId == 'lf-dsl' && loadforge.isRunning"
+          "when": "loadforge.isRunning"
         }
       ],
       "explorer/context": [
@@ -80,7 +80,7 @@
         },
         {
           "command": "loadforge.stopLoadTest",
-          "when": "resourceLangId == 'lf-dsl' && loadforge.isRunning",
+          "when": "loadforge.isRunning",
           "group": "navigation"
         }
       ],
@@ -92,7 +92,7 @@
         },
         {
           "command": "loadforge.stopLoadTest",
-          "when": "editorLangId == 'lf-dsl' && loadforge.isRunning",
+          "when": "loadforge.isRunning",
           "group": "navigation"
         }
       ],
@@ -104,7 +104,7 @@
         },
         {
           "command": "loadforge.stopLoadTest",
-          "when": "editorLangId == 'lf-dsl' && loadforge.isRunning",
+          "when": "loadforge.isRunning",
           "group": "navigation"
         }
       ]

@@ -89,6 +89,9 @@ async function invokeBinaryExecution(binaryPath: string, args: string[]) {
 export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgePanel) {
     panel = loadforgePanel;
     panel.clear();
+    await vscode.commands.executeCommand(
+        "workbench.view.extension.loadforge-panel"
+    );
 
     const envFilePaths = await collectEnvironmentFilePaths();
     const selectedEnvFile = await promptForEnvironmentFile(envFilePaths);
