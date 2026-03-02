@@ -1,15 +1,10 @@
 import * as vscode from 'vscode';
 import { updateIsRunningState } from './running-context';
+import { LoadforgePanel } from '../loadforgePanel';
+import { spawn } from 'child_process';
 
-let currentExecution: vscode.TaskExecution | undefined;
-
-vscode.tasks.onDidEndTaskProcess(e => {
-    if (currentExecution && e.execution === currentExecution) {
-        console.log('Exit code:', e.exitCode);
-        updateIsRunningState(false);
-        currentExecution = undefined;
-    }
-});
+let proc: ReturnType<typeof spawn> | undefined;
+let panel: LoadforgePanel;
 
 function getBinaryPath(): string {
     const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
@@ -75,23 +70,46 @@ function _runLoadTest(lfFilePath: string, envFilePath: string | undefined) {
 async function invokeBinaryExecution(binaryPath: string, args: string[]) {
     updateIsRunningState(true);
 
-    const task = new vscode.Task(
-        { type: 'shell' },
-        vscode.TaskScope.Workspace,
-        'Run Load Test',
-        'loadforge',
-        new vscode.ShellExecution(generateCommand(binaryPath, args)),
-    );
+    proc = spawn(binaryPath, args, {
+        env: { ...process.env, FORCE_COLOR: '1', CLICOLOR: '1', TERM: 'xterm-256color' },
+        shell: false,
+        windowsHide: true
+    });
 
-    currentExecution = await vscode.tasks.executeTask(task);
+    proc.stdout?.setEncoding('utf8');
+    proc.stderr?.setEncoding('utf8');
+
+    proc.stdout?.on('data', (s) => panel.append(s));
+    proc.stderr?.on('data', (s) => panel.append(s));
+
+    proc.on('close', () => {
+        updateIsRunningState(false);
+        proc = undefined;
+    });
+
+    proc.on('error', (err) => {
+        panel.append(`\n\x1b[31m[spawn error]\x1b[0m ${String(err)}\n`);
+        updateIsRunningState(false);
+        proc = undefined;
+    });
 }
 
-export async function runLoadTest(lfFilePath: string) {
+export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgePanel) {
+    panel = loadforgePanel;
+    panel.clear();
+
     const envFilePaths = await collectEnvironmentFilePaths();
     const selectedEnvFile = await promptForEnvironmentFile(envFilePaths);
     _runLoadTest(lfFilePath, selectedEnvFile);
 }
 
 export function stopLoadTest() {
-    currentExecution?.terminate();
+    if (!proc) {
+        return;
+    }
+    if (process.platform === 'win32') {
+        spawn("taskkill", ["/pid", String(proc.pid), "/f", "/t"]);
+    } else {
+        proc.kill('SIGTERM');
+    }
 }

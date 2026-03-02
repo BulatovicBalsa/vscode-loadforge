@@ -28,8 +28,13 @@
     "languages": [
       {
         "id": "lf-dsl",
-        "extensions": [".lf"],
-        "aliases": ["LoadForge DSL", "lf-dsl"],
+        "extensions": [
+          ".lf"
+        ],
+        "aliases": [
+          "LoadForge DSL",
+          "lf-dsl"
+        ],
         "configuration": "./language-configuration.json",
         "icon": {
           "light": "icons/beaker-light.svg",
@@ -103,6 +108,25 @@
           "group": "navigation"
         }
       ]
+    },
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "loadforge-panel",
+          "title": "LoadForge",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "loadforge-panel": [
+        {
+          "id": "loadforge-output",
+          "name": "Output",
+          "icon": "$(beaker)",
+          "type": "webview"
+        }
+      ]
     }
   },
   "scripts": {
@@ -114,13 +138,16 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.109.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "typescript-eslint": "^8.56.1",
+    "@types/vscode": "^1.109.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "typescript-eslint": "^8.56.1"
+  },
+  "dependencies": {
+    "ansi-to-html": "^0.7.2"
   }
 }
