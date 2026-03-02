@@ -13,14 +13,6 @@ function getBinaryPath(): string {
     return process.platform === 'win32' ? binaryPathWindows : binaryPathLinux;
 }
 
-function generateCommand(binaryPath: string, args: string[]) {
-    if (process.platform === 'win32') {
-        const cmd = `& "${binaryPath}" ${args.map(a => `"${a}"`).join(" ")}`;
-        return cmd;
-    }
-    return `${binaryPath} ${args.map(a => `"${a}"`).join(" ")}`;
-}
-
 async function collectEnvironmentFilePaths(): Promise<string[]> {
     const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
     if (!rootPath) {
