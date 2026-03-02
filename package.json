@@ -127,7 +127,13 @@
           "type": "webview"
         }
       ]
-    }
+    },
+    "snippets": [
+      {
+        "language": "lf-dsl",
+        "path": "./snippets/snippets.json"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

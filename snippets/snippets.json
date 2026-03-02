@@ -1,0 +1,35 @@
+{
+  "Scenario": {
+    "prefix": "scenario",
+    "body": [
+      "scenario \"${1:name}\" {",
+      "  request ${2|GET,POST,PUT,PATCH,DELETE|} \"${3:/path}\"",
+      "  expect status ${4:200}",
+      "}"
+    ]
+  },
+  "Load": {
+    "prefix": "load",
+    "body": [
+      "load {",
+      "  users ${1:100}",
+      "  rampUp ${2:10}${3|h,m,s|}",
+      "  duration ${4:60}${5|h,m,s|}",
+      "}"
+    ]
+  },
+  "Auth": {
+    "prefix": "auth",
+    "body": [
+      "auth login {",
+      "  endpoint \"${1:/auth/login}\"",
+      "  method ${2|GET,POST|}",
+      "  body {",
+      "    username = \"${3:admin}\"",
+      "    password = \"${4:admin}\"",
+      "  }",
+      "  format \"${5:$.access_token}\"",
+      "}"
+    ]
+  }
+}
