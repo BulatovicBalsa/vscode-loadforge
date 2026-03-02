@@ -15,6 +15,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('loadforge.runLoadTest', async (explorerUri?: vscode.Uri) => {
+			// save all lf files before running the test
+			await vscode.workspace.saveAll(false);
 			if (explorerUri) {
 				runLoadTest(explorerUri.fsPath, panel);
 				return;
