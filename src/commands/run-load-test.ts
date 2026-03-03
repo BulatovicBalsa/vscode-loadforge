@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { updateIsRunningState } from './running-context';
 import { LoadforgePanel } from '../loadforgePanel';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 
 let proc: ReturnType<typeof spawn> | undefined;
 let panel: LoadforgePanel;
@@ -100,6 +100,18 @@ async function invokeBinaryExecution(binaryPath: string, args: string[]) {
     });
 }
 
+function isEnvironmentFileNeeded(lfFilePath: string): boolean | undefined {
+    const binaryPath = getBinaryPath();
+    const args = [lfFilePath, '--env-needed'];
+    // spawn process and receive true or false in stdout
+    const result = spawnSync(binaryPath, args);
+    if (result.status !== 0) {
+        vscode.window.showErrorMessage(`Failed to check if environment file is needed: ${result.error?.message || result.stderr.toString() || 'Unknown error'}`);
+        return undefined;
+    }
+    return result.stdout.toString().trim() === 'true';
+}
+
 export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgePanel) {
     panel = loadforgePanel;
     panel.clear();
@@ -107,8 +119,16 @@ export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgeP
         "workbench.view.extension.loadforge-panel"
     );
 
-    const envFilePaths = await collectEnvironmentFilePaths();
-    const selectedEnvFile = await promptForEnvironmentFile(envFilePaths);
+    const envFileNeeded = isEnvironmentFileNeeded(lfFilePath);
+    if (envFileNeeded === undefined) {
+        return;
+    }
+
+    let selectedEnvFile = undefined;
+    if (envFileNeeded) {
+        const envFilePaths = await collectEnvironmentFilePaths();
+        selectedEnvFile = await promptForEnvironmentFile(envFilePaths);
+    }
     _runLoadTest(lfFilePath, selectedEnvFile);
 }
 
