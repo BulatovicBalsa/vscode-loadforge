@@ -5,6 +5,14 @@ import { spawn } from 'child_process';
 
 let proc: ReturnType<typeof spawn> | undefined;
 let panel: LoadforgePanel;
+let stopTimer: NodeJS.Timeout | undefined;
+
+function clearStopTimer() {
+    if (stopTimer) {
+        clearTimeout(stopTimer);
+        stopTimer = undefined;
+    }
+}
 
 function getBinaryPath(): string {
     const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
@@ -42,7 +50,6 @@ async function promptForEnvironmentFile(envFilePaths: string[]): Promise<string 
     const result = await selectedEnvFile;
 
     if (result) {
-        // Find the full path corresponding to the selected label
         const fullPath = envFilePaths.find(path => vscode.workspace.asRelativePath(path) === result.label);
         return fullPath;
     }
@@ -55,17 +62,22 @@ function _runLoadTest(lfFilePath: string, envFilePath: string | undefined) {
         args.push(envFilePath);
     }
 
+    // Enable backend stdin control command (STOP\n).
+    args.push('--control-stdin');
+
     const binaryPath = getBinaryPath();
     invokeBinaryExecution(binaryPath, args);
 }
 
 async function invokeBinaryExecution(binaryPath: string, args: string[]) {
     updateIsRunningState(true);
+    clearStopTimer();
 
     proc = spawn(binaryPath, args, {
         env: { ...process.env, FORCE_COLOR: '1', CLICOLOR: '1', TERM: 'xterm-256color' },
         shell: false,
-        windowsHide: true
+        windowsHide: true,
+        stdio: ['pipe', 'pipe', 'pipe']
     });
 
     proc.stdout?.setEncoding('utf8');
@@ -75,11 +87,13 @@ async function invokeBinaryExecution(binaryPath: string, args: string[]) {
     proc.stderr?.on('data', (s) => panel.append(s));
 
     proc.on('close', () => {
+        clearStopTimer();
         updateIsRunningState(false);
         proc = undefined;
     });
 
     proc.on('error', (err) => {
+        clearStopTimer();
         panel.append(`\n\x1b[31m[spawn error]\x1b[0m ${String(err)}\n`);
         updateIsRunningState(false);
         proc = undefined;
@@ -102,9 +116,46 @@ export function stopLoadTest() {
     if (!proc) {
         return;
     }
-    if (process.platform === 'win32') {
-        spawn("taskkill", ["/pid", String(proc.pid), "/f", "/t"]);
-    } else {
-        proc.kill('SIGTERM');
+
+    const p = proc;
+    let gracefulRequested = false;
+
+    // First try cooperative stop via stdin control message.
+    try {
+        if (p.stdin && !p.stdin.destroyed) {
+            p.stdin.write('STOP\n');
+            gracefulRequested = true;
+        }
+    } catch {
+        // no-op, fallback below
     }
+
+    // POSIX fallback if stdin write is unavailable.
+    if (!gracefulRequested && process.platform !== 'win32') {
+        try {
+            p.kill('SIGINT');
+            gracefulRequested = true;
+        } catch {
+            // no-op, hard-kill fallback below
+        }
+    }
+
+    clearStopTimer();
+    stopTimer = setTimeout(() => {
+        if (p.exitCode !== null) {
+            return;
+        }
+
+        if (process.platform === 'win32') {
+            if (typeof p.pid === 'number') {
+                spawn('taskkill', ['/pid', String(p.pid), '/f', '/t']);
+            }
+        } else {
+            try {
+                p.kill('SIGKILL');
+            } catch {
+                // no-op
+            }
+        }
+    }, 7000);
 }
