@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { updateIsRunningState } from './running-context';
 import { LoadforgePanel } from '../loadforgePanel';
 import { spawn, spawnSync } from 'child_process';
+import { getLoadforgeBinaryPath } from '../runtime-manager';
 
 let proc: ReturnType<typeof spawn> | undefined;
 let panel: LoadforgePanel;
@@ -18,13 +19,6 @@ function clearStopTimer() {
         clearTimeout(stopTimer);
         stopTimer = undefined;
     }
-}
-
-function getBinaryPath(): string {
-    const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
-    const binaryPathLinux = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '/bin/' + binaryName;
-    const binaryPathWindows = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '\\bin\\loadforge_win\\' + binaryName;
-    return process.platform === 'win32' ? binaryPathWindows : binaryPathLinux;
 }
 
 async function collectFilePaths(extension: string): Promise<string[]> {
@@ -63,20 +57,28 @@ async function pickFile(filePaths: string[], extension: string): Promise<string 
 }
 
 function _runLoadTest(lfFilePath: string, envFilePath: string | undefined, ulfFilePath: string | undefined) {
-    const args = [lfFilePath];
-    if (envFilePath) {
-        args.push(envFilePath);
-    }
-    
-    if (ulfFilePath) {
-        args.push(ulfFilePath);
-    }
+    void executeLoadTest(lfFilePath, envFilePath, ulfFilePath);
+}
 
-    // Enable backend stdin control command (STOP\n).
-    args.push('--control-stdin');
+async function executeLoadTest(lfFilePath: string, envFilePath: string | undefined, ulfFilePath: string | undefined) {
+    try {
+        const args = [lfFilePath];
+        if (envFilePath) {
+            args.push(envFilePath);
+        }
 
-    const binaryPath = getBinaryPath();
-    invokeBinaryExecution(binaryPath, args);
+        if (ulfFilePath) {
+            args.push(ulfFilePath);
+        }
+
+        // Enable backend stdin control command (STOP\n).
+        args.push('--control-stdin');
+
+        const binaryPath = await getLoadforgeBinaryPath();
+        invokeBinaryExecution(binaryPath, args);
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to start LoadForge: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 async function invokeBinaryExecution(binaryPath: string, args: string[]) {
@@ -136,24 +138,6 @@ function parseLoadforgeInfo(raw: string): LoadforgeInfo | undefined {
     }
 }
 
-function getLoadforgeInfo(lfFilePath: string): LoadforgeInfo | undefined {
-    const binaryPath = getBinaryPath();
-    const args = [lfFilePath, '--info'];
-    const result = spawnSync(binaryPath, args, { encoding: 'utf8' });
-    if (result.status !== 0) {
-        vscode.window.showErrorMessage(`Failed to read LoadForge test info: ${result.error?.message || result.stderr || 'Unknown error'}`);
-        return undefined;
-    }
-
-    const info = parseLoadforgeInfo(result.stdout.trim());
-    if (!info) {
-        vscode.window.showErrorMessage('Failed to parse LoadForge test info.');
-        return undefined;
-    }
-
-    return info;
-}
-
 export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgePanel) {
     panel = loadforgePanel;
     panel.clear();
@@ -161,7 +145,7 @@ export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgeP
         "workbench.view.extension.loadforge-panel"
     );
 
-    const loadforgeInfo = getLoadforgeInfo(lfFilePath);
+    const loadforgeInfo = await getLoadforgeInfoAsync(lfFilePath);
     if (!loadforgeInfo) {
         return;
     }
@@ -179,6 +163,24 @@ export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgeP
     }
 
     _runLoadTest(lfFilePath, selectedEnvFile, selectedUlfFile);
+}
+
+async function getLoadforgeInfoAsync(lfFilePath: string): Promise<LoadforgeInfo | undefined> {
+    const binaryPath = await getLoadforgeBinaryPath();
+    const args = [lfFilePath, '--info'];
+    const result = spawnSync(binaryPath, args, { encoding: 'utf8' });
+    if (result.status !== 0) {
+        vscode.window.showErrorMessage(`Failed to read LoadForge test info: ${result.error?.message || result.stderr || 'Unknown error'}`);
+        return undefined;
+    }
+
+    const info = parseLoadforgeInfo(result.stdout.trim());
+    if (!info) {
+        vscode.window.showErrorMessage('Failed to parse LoadForge test info.');
+        return undefined;
+    }
+
+    return info;
 }
 
 export function stopLoadTest() {

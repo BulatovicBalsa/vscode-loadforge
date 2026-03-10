@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import { runLoadTest, stopLoadTest } from './commands/run-load-test';
 import { LoadforgePanel } from './loadforgePanel';
+import { checkForRuntimeUpdatesOnStartup, initializeRuntimeManager, updateLoadforgeRuntime } from './runtime-manager';
 
 export function activate(context: vscode.ExtensionContext) {
+	initializeRuntimeManager(context);
 
 	const panel = new LoadforgePanel();
 
@@ -35,6 +37,14 @@ export function activate(context: vscode.ExtensionContext) {
 			stopLoadTest();
 		})
 	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('loadforge.updateRuntime', async () => {
+			await updateLoadforgeRuntime({ interactive: true });
+		})
+	);
+
+	checkForRuntimeUpdatesOnStartup();
 
 }
 
