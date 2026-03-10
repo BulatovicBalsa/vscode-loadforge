@@ -7,6 +7,12 @@ let proc: ReturnType<typeof spawn> | undefined;
 let panel: LoadforgePanel;
 let stopTimer: NodeJS.Timeout | undefined;
 
+type LoadforgeInfo = {
+    env: boolean;
+    userlist: boolean;
+    name?: string;
+};
+
 function clearStopTimer() {
     if (stopTimer) {
         clearTimeout(stopTimer);
@@ -104,28 +110,48 @@ async function invokeBinaryExecution(binaryPath: string, args: string[]) {
     });
 }
 
-function isEnvironmentFileNeeded(lfFilePath: string): boolean | undefined {
-    const binaryPath = getBinaryPath();
-    const args = [lfFilePath, '--env-needed'];
-    // spawn process and receive true or false in stdout
-    const result = spawnSync(binaryPath, args);
-    if (result.status !== 0) {
-        vscode.window.showErrorMessage(`Failed to check if environment file is needed: ${result.error?.message || result.stderr.toString() || 'Unknown error'}`);
+function parseLoadforgeInfo(raw: string): LoadforgeInfo | undefined {
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') {
+            return undefined;
+        }
+
+        const info = parsed as Partial<LoadforgeInfo>;
+        if (typeof info.env !== 'boolean' || typeof info.userlist !== 'boolean') {
+            return undefined;
+        }
+
+        if (info.name !== undefined && typeof info.name !== 'string') {
+            return undefined;
+        }
+
+        return {
+            env: info.env,
+            userlist: info.userlist,
+            name: info.name
+        };
+    } catch {
         return undefined;
     }
-    return result.stdout.toString().trim() === 'true';
 }
 
-function isUlfFileNeeded(lfFilePath: string): boolean | undefined {
+function getLoadforgeInfo(lfFilePath: string): LoadforgeInfo | undefined {
     const binaryPath = getBinaryPath();
-    const args = [lfFilePath, '--userlist-needed'];
-    // spawn process and receive true or false in stdout
-    const result = spawnSync(binaryPath, args);
+    const args = [lfFilePath, '--info'];
+    const result = spawnSync(binaryPath, args, { encoding: 'utf8' });
     if (result.status !== 0) {
-        vscode.window.showErrorMessage(`Failed to check if ULF file is needed: ${result.error?.message || result.stderr.toString() || 'Unknown error'}`);
+        vscode.window.showErrorMessage(`Failed to read LoadForge test info: ${result.error?.message || result.stderr || 'Unknown error'}`);
         return undefined;
     }
-    return result.stdout.toString().trim() === 'true';
+
+    const info = parseLoadforgeInfo(result.stdout.trim());
+    if (!info) {
+        vscode.window.showErrorMessage('Failed to parse LoadForge test info.');
+        return undefined;
+    }
+
+    return info;
 }
 
 export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgePanel) {
@@ -135,24 +161,19 @@ export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgeP
         "workbench.view.extension.loadforge-panel"
     );
 
-    const envFileNeeded = isEnvironmentFileNeeded(lfFilePath);
-    if (envFileNeeded === undefined) {
-        return;
-    }
-
-    const ulfFileNeeded = isUlfFileNeeded(lfFilePath);
-    if (ulfFileNeeded === undefined) {
+    const loadforgeInfo = getLoadforgeInfo(lfFilePath);
+    if (!loadforgeInfo) {
         return;
     }
 
     let selectedEnvFile = undefined;
-    if (envFileNeeded) {
+    if (loadforgeInfo.env) {
         const envFilePaths = await collectFilePaths('env');
         selectedEnvFile = await pickFile(envFilePaths, 'env');
     }
 
     let selectedUlfFile = undefined;
-    if (ulfFileNeeded) {
+    if (loadforgeInfo.userlist) {
         const ulfFilePaths = await collectFilePaths('ulf');
         selectedUlfFile = await pickFile(ulfFilePaths, 'ulf');
     }
