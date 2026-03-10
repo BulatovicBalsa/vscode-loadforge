@@ -73,11 +73,9 @@ export async function updateLoadforgeRuntime(options: UpdateOptions): Promise<Up
 }
 
 function getBundledBinaryPath(): string {
+    const context = requireContext();
     const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
-    const extensionPath = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath;
-    const binaryPathLinux = `${extensionPath}/bin/${binaryName}`;
-    const binaryPathWindows = `${extensionPath}\\bin\\${binaryName}`;
-    return process.platform === 'win32' ? binaryPathWindows : binaryPathLinux;
+    return path.join(context.extensionPath, 'bin', binaryName);
 }
 
 function getPlatformKey(): PlatformKey | undefined {
@@ -314,7 +312,7 @@ async function fetchJson<T>(url: string): Promise<T> {
     return JSON.parse(buffer.toString('utf8')) as T;
 }
 
-function downloadBuffer(url: string): Promise<Buffer> {
+function downloadBuffer(url: string, remainingRedirects: number = 10): Promise<Buffer> {
     return new Promise((resolve, reject) => {
         const request = https.get(url, {
             headers: {
@@ -324,7 +322,11 @@ function downloadBuffer(url: string): Promise<Buffer> {
             const statusCode = response.statusCode ?? 0;
             if (statusCode >= 300 && statusCode < 400 && response.headers.location) {
                 response.resume();
-                resolve(downloadBuffer(response.headers.location));
+                if (remainingRedirects <= 0) {
+                    reject(new Error('Too many redirects.'));
+                    return;
+                }
+                resolve(downloadBuffer(response.headers.location, remainingRedirects - 1));
                 return;
             }
 

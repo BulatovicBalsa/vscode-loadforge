@@ -64,11 +64,11 @@ async function executeLoadTest(lfFilePath: string, envFilePath: string | undefin
     try {
         const args = [lfFilePath];
         if (envFilePath) {
-            args.push(envFilePath);
+            args.push('--env', envFilePath);
         }
 
         if (ulfFilePath) {
-            args.push(ulfFilePath);
+            args.push('--userlist', ulfFilePath);
         }
 
         // Enable backend stdin control command (STOP\n).
