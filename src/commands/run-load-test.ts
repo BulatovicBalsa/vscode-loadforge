@@ -17,49 +17,53 @@ function clearStopTimer() {
 function getBinaryPath(): string {
     const binaryName = process.platform === 'win32' ? 'loadforge.exe' : 'loadforge';
     const binaryPathLinux = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '/bin/' + binaryName;
-    const binaryPathWindows = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '\\bin\\' + binaryName;
+    const binaryPathWindows = vscode.extensions.getExtension('siit-na-kvadrat.loadforge')?.extensionPath + '\\bin\\loadforge_win\\' + binaryName;
     return process.platform === 'win32' ? binaryPathWindows : binaryPathLinux;
 }
 
-async function collectEnvironmentFilePaths(): Promise<string[]> {
+async function collectFilePaths(extension: string): Promise<string[]> {
     const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
     if (!rootPath) {
         vscode.window.showErrorMessage('No workspace folder found. Please open a folder in VS Code.');
         return [];
     }
-    const searchPattern = new vscode.RelativePattern(rootPath, '**/*.env');
+    const searchPattern = new vscode.RelativePattern(rootPath, `**/*.${extension}`);
     const files = await vscode.workspace.findFiles(searchPattern);
     return files.map(file => file.fsPath);
 }
 
-async function promptForEnvironmentFile(envFilePaths: string[]): Promise<string | undefined> {
-    if (envFilePaths.length === 0) {
-        vscode.window.showErrorMessage('No .env files found in the workspace.');
+async function pickFile(filePaths: string[], extension: string): Promise<string | undefined> {
+    if (filePaths.length === 0) {
+        vscode.window.showErrorMessage(`No .${extension} files found in the workspace.`);
         return undefined;
     }
 
-    if (envFilePaths.length === 1) {
-        return envFilePaths[0];
+    if (filePaths.length === 1) {
+        return filePaths[0];
     }
 
-    const envFileOptions = envFilePaths.map(path => ({ label: vscode.workspace.asRelativePath(path), description: path }));
-    const selectedEnvFile = vscode.window.showQuickPick(envFileOptions, {
-        placeHolder: 'Select an environment file to use for the load test',
+    const fileOptions = filePaths.map(path => ({ label: vscode.workspace.asRelativePath(path), description: path }));
+    const selectedFile = vscode.window.showQuickPick(fileOptions, {
+        placeHolder: `Select an .${extension} file to use for the load test`,
         canPickMany: false
     });
-    const result = await selectedEnvFile;
+    const result = await selectedFile;
 
     if (result) {
-        const fullPath = envFilePaths.find(path => vscode.workspace.asRelativePath(path) === result.label);
+        const fullPath = filePaths.find(path => vscode.workspace.asRelativePath(path) === result.label);
         return fullPath;
     }
     return undefined;
 }
 
-function _runLoadTest(lfFilePath: string, envFilePath: string | undefined) {
+function _runLoadTest(lfFilePath: string, envFilePath: string | undefined, ulfFilePath: string | undefined) {
     const args = [lfFilePath];
     if (envFilePath) {
         args.push(envFilePath);
+    }
+    
+    if (ulfFilePath) {
+        args.push(ulfFilePath);
     }
 
     // Enable backend stdin control command (STOP\n).
@@ -112,6 +116,18 @@ function isEnvironmentFileNeeded(lfFilePath: string): boolean | undefined {
     return result.stdout.toString().trim() === 'true';
 }
 
+function isUlfFileNeeded(lfFilePath: string): boolean | undefined {
+    const binaryPath = getBinaryPath();
+    const args = [lfFilePath, '--userlist-needed'];
+    // spawn process and receive true or false in stdout
+    const result = spawnSync(binaryPath, args);
+    if (result.status !== 0) {
+        vscode.window.showErrorMessage(`Failed to check if ULF file is needed: ${result.error?.message || result.stderr.toString() || 'Unknown error'}`);
+        return undefined;
+    }
+    return result.stdout.toString().trim() === 'true';
+}
+
 export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgePanel) {
     panel = loadforgePanel;
     panel.clear();
@@ -124,12 +140,24 @@ export async function runLoadTest(lfFilePath: string, loadforgePanel: LoadforgeP
         return;
     }
 
+    const ulfFileNeeded = isUlfFileNeeded(lfFilePath);
+    if (ulfFileNeeded === undefined) {
+        return;
+    }
+
     let selectedEnvFile = undefined;
     if (envFileNeeded) {
-        const envFilePaths = await collectEnvironmentFilePaths();
-        selectedEnvFile = await promptForEnvironmentFile(envFilePaths);
+        const envFilePaths = await collectFilePaths('env');
+        selectedEnvFile = await pickFile(envFilePaths, 'env');
     }
-    _runLoadTest(lfFilePath, selectedEnvFile);
+
+    let selectedUlfFile = undefined;
+    if (ulfFileNeeded) {
+        const ulfFilePaths = await collectFilePaths('ulf');
+        selectedUlfFile = await pickFile(ulfFilePaths, 'ulf');
+    }
+
+    _runLoadTest(lfFilePath, selectedEnvFile, selectedUlfFile);
 }
 
 export function stopLoadTest() {
