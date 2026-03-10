@@ -4,8 +4,13 @@
   "description": "Load test using simple description language",
   "publisher": "siit-na-kvadrat",
   "version": "0.0.1",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.109.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BulatovicBalsa/vscode-loadforge.git"
   },
   "categories": [
     "Other"

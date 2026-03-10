@@ -38,7 +38,7 @@ export class LoadforgePanel implements vscode.WebviewViewProvider {
   private getHtml(): string {
     return `
     <html>
-        <body style="background:#1e1e1e;color:#ddd;font-family:monospace">
+        <body style="color:#ddd;font-family:monospace">
             <div id="out" style="white-space: pre-wrap;"></div>
 
             <script>
