@@ -145,7 +145,32 @@
         "language": "lf-dsl",
         "path": "./snippets/snippets.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "LoadForge",
+      "properties": {
+        "loadforge.runtime.source": {
+          "type": "string",
+          "default": "latest",
+          "enum": [
+            "latest",
+            "bundled",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Use the latest downloaded runtime, falling back to the bundled binary if unavailable. Auto-updates on startup.",
+            "Always use the binary that ships with the extension. Skips auto-update checks.",
+            "Use a custom binary path specified in loadforge.runtime.customBinaryPath. Skips auto-update checks."
+          ],
+          "markdownDescription": "Controls which LoadForge runtime binary is used when running load tests.\n- **latest** — prefer the downloaded (up-to-date) binary; fall back to the bundled one.\n- **bundled** — always use the binary shipped with the extension.\n- **custom** — use the path set in `#loadforge.runtime.customBinaryPath#`."
+        },
+        "loadforge.runtime.customBinaryPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to a custom LoadForge binary. Only used when `#loadforge.runtime.source#` is set to `custom`."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "node scripts/build.mjs",
