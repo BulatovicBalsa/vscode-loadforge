@@ -15,7 +15,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -28,6 +30,11 @@
         "command": "loadforge.stopLoadTest",
         "title": "Stop Load Test",
         "icon": "$(stop)"
+      },
+      {
+        "command": "loadforge.updateRuntime",
+        "title": "Update LoadForge Runtime",
+        "icon": "$(cloud-download)"
       }
     ],
     "languages": [
@@ -159,6 +166,7 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "ansi-to-html": "^0.7.2"
+    "ansi-to-html": "^0.7.2",
+    "jszip": "^3.10.1"
   }
 }
