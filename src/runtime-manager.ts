@@ -41,11 +41,53 @@ type UpdateResult =
 let extensionContext: vscode.ExtensionContext | undefined;
 let ongoingUpdate: Promise<UpdateResult> | undefined;
 
+type RuntimeSource = 'latest' | 'bundled' | 'custom';
+
 export function initializeRuntimeManager(context: vscode.ExtensionContext) {
     extensionContext = context;
 }
 
+function getRuntimeSource(): RuntimeSource {
+    const config = vscode.workspace.getConfiguration('loadforge.runtime');
+    const value = config.get<string>('source', 'latest');
+    if (value === 'bundled' || value === 'custom') {
+        return value;
+    }
+    return 'latest';
+}
+
+function getCustomBinaryPath(): string {
+    const config = vscode.workspace.getConfiguration('loadforge.runtime');
+    return config.get<string>('customBinaryPath', '').trim();
+}
+
 export async function getLoadforgeBinaryPath(): Promise<string> {
+    const source = getRuntimeSource();
+
+    if (source === 'custom') {
+        const customPath = getCustomBinaryPath();
+        if (!customPath) {
+            throw new Error(
+                'loadforge.runtime.source is set to "custom" but loadforge.runtime.customBinaryPath is empty. '
+                + 'Please set the path to your LoadForge binary in settings.'
+            );
+        }
+        try {
+            await fs.access(customPath);
+        } catch {
+            throw new Error(
+                `Custom LoadForge binary not found at "${customPath}". `
+                + 'Check the loadforge.runtime.customBinaryPath setting.'
+            );
+        }
+        return customPath;
+    }
+
+    if (source === 'bundled') {
+        return getBundledBinaryPath();
+    }
+
+    // source === 'latest': prefer downloaded, fall back to bundled
     const downloadedBinaryPath = await getDownloadedBinaryPath();
     if (downloadedBinaryPath) {
         return downloadedBinaryPath;
@@ -55,6 +97,10 @@ export async function getLoadforgeBinaryPath(): Promise<string> {
 }
 
 export function checkForRuntimeUpdatesOnStartup() {
+    if (getRuntimeSource() !== 'latest') {
+        return;
+    }
+
     void updateLoadforgeRuntime({ interactive: false }).catch(() => {
         // Startup checks are best-effort; keep the bundled runtime as fallback.
     });
