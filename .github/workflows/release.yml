@@ -27,7 +27,9 @@ jobs:
 
       - name: Read package version
         id: version
-        run: echo "package_version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Validate tag matches package version
         run: |
